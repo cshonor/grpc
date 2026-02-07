@@ -38,13 +38,175 @@
 ## 环境搭建
 
 ### 1. 安装 Protocol Buffers 编译器
-```bash
-# Windows (使用 Chocolatey)
-choco install protoc
 
-# 或下载二进制文件
-# https://github.com/protocolbuffers/protobuf/releases
+#### 方法 1：使用 Chocolatey（推荐，需要管理员权限）
+
+**步骤 1：安装 Chocolatey（如果未安装）**
+
+在**管理员模式**的 PowerShell 中运行：
+
+```powershell
+# PowerShell (管理员)
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 ```
+
+**注意**：如果遇到网络连接错误（如"基础连接已经关闭"），可能是：
+- 网络连接问题
+- 防火墙或代理设置
+- 需要配置代理
+
+**解决方案**：
+
+**使用代理：配置 PowerShell 代理设置**
+
+如果你使用代理服务器，需要先配置 PowerShell 的代理设置：
+
+```powershell
+# 方法 1：临时设置代理（仅当前会话有效）
+$env:HTTP_PROXY = "http://代理地址:端口"
+$env:HTTPS_PROXY = "http://代理地址:端口"
+
+# 例如：
+# $env:HTTP_PROXY = "http://127.0.0.1:7890"
+# $env:HTTPS_PROXY = "http://127.0.0.1:7890"
+
+# 如果代理需要认证：
+# $env:HTTP_PROXY = "http://用户名:密码@代理地址:端口"
+```
+
+或者使用 `WebClient` 的代理设置：
+
+```powershell
+# 配置代理
+$proxy = New-Object System.Net.WebProxy("http://代理地址:端口")
+$proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+[System.Net.WebRequest]::DefaultWebProxy = $proxy
+
+# 然后再运行 Chocolatey 安装命令
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+```
+
+**或者使用其他安装方法**（见下方方法 2 和方法 3，推荐）
+
+或者访问：https://chocolatey.org/install
+
+**步骤 2：安装 protoc**
+
+```bash
+# 在管理员 CMD 或 PowerShell 中运行
+choco install protoc -y
+```
+
+#### 方法 2：使用 Scoop
+
+```bash
+# 添加 extras bucket（如果还没有）
+scoop bucket add extras
+
+# 安装 protoc
+scoop install protoc
+```
+
+#### 方法 3：手动下载安装（推荐，最可靠）
+
+**步骤 1：下载 protoc**
+
+1. 访问 Protocol Buffers 发布页面：
+   - https://github.com/protocolbuffers/protobuf/releases
+
+2. 下载 Windows 版本：
+   - 64位系统：选择 `protoc-xx.x-win64.zip`（例如 `protoc-29.6-win64.zip`）
+   - 32位系统：选择 `protoc-xx.x-win32.zip`
+
+**步骤 2：解压文件**
+
+**方法 A：使用文件资源管理器（推荐）**
+
+1. 找到下载的 ZIP 文件（通常在"下载"文件夹）
+2. 右键点击 ZIP 文件 → "全部解压缩"（Extract All）
+3. 在"文件将被提取到这个文件夹"中输入：`C:\protoc`
+4. 点击"解压"
+5. **重要**：如果解压后 `C:\protoc` 目录下有 `protoc-xx.x-win64` 子文件夹，需要将子文件夹内的内容移动到 `C:\protoc`：
+   - 打开 `C:\protoc\protoc-xx.x-win64` 文件夹
+   - 全选所有内容（`bin`、`include`、`readme.txt`）
+   - 剪切并粘贴到 `C:\protoc` 目录
+   - 删除空的 `protoc-xx.x-win64` 子文件夹
+
+**方法 B：使用 PowerShell（需要管理员权限）**
+
+```powershell
+# 1. 设置变量（请根据实际下载的文件名修改版本号）
+$protocVersion = "29.6"  # 修改为实际版本号
+$zipPath = "$env:USERPROFILE\Downloads\protoc-$protocVersion-win64.zip"
+$installPath = "C:\protoc"
+
+# 2. 解压文件
+if (Test-Path $installPath) {
+    Remove-Item $installPath -Recurse -Force
+}
+New-Item -ItemType Directory -Path $installPath -Force | Out-Null
+Expand-Archive -Path $zipPath -DestinationPath $installPath -Force
+
+# 3. 如果解压后有多一层文件夹，需要移动内容
+$subFolder = Get-ChildItem $installPath -Directory | Where-Object { $_.Name -like "protoc-*" }
+if ($subFolder) {
+    Write-Host "检测到子文件夹，正在移动文件..." -ForegroundColor Yellow
+    Move-Item -Path "$($subFolder.FullName)\*" -Destination $installPath -Force
+    Remove-Item $subFolder.FullName -Force
+}
+
+# 4. 验证文件结构
+Write-Host "`n文件结构：" -ForegroundColor Green
+Get-ChildItem $installPath
+```
+
+**步骤 3：添加到系统 PATH**
+
+**方法 A：使用图形界面**
+
+1. 按 `Win + R`，输入 `sysdm.cpl`，回车
+2. 点击"高级"选项卡 → "环境变量"
+3. 在"系统变量"中找到 `Path`，点击"编辑"
+4. 点击"新建"，添加 `C:\protoc\bin`
+5. 点击"确定"保存所有对话框
+
+**方法 B：使用 PowerShell（需要管理员权限）**
+
+```powershell
+# 添加到系统 PATH
+$binPath = "C:\protoc\bin"
+$currentPath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+
+if ($currentPath -notlike "*$binPath*") {
+    $newPath = $currentPath + ";$binPath"
+    [Environment]::SetEnvironmentVariable("Path", $newPath, "Machine")
+    Write-Host "已添加到 PATH: $binPath" -ForegroundColor Green
+} else {
+    Write-Host "PATH 中已存在: $binPath" -ForegroundColor Yellow
+}
+
+# 刷新当前会话的 PATH
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+```
+
+**步骤 4：验证安装**
+
+```powershell
+# 方法 1：使用完整路径测试
+& "C:\protoc\bin\protoc.exe" --version
+
+# 方法 2：如果 PATH 已配置，直接使用（需要重新打开 PowerShell）
+protoc --version
+```
+
+**如果 `protoc` 命令找不到：**
+
+1. 关闭并重新打开 PowerShell（让环境变量生效）
+2. 或者手动刷新 PATH：
+   ```powershell
+   $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+   protoc --version
+   ```
 
 ### 2. 安装 Go 插件
 ```bash
