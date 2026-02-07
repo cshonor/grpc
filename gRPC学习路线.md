@@ -209,6 +209,24 @@ protoc --version
    ```
 
 ### 2. 安装 Go 插件
+
+**如果遇到网络问题，先配置 Go 代理：**
+
+```powershell
+# 方法 1：使用国内镜像（推荐，永久设置）
+go env -w GOPROXY=https://goproxy.cn,direct
+
+# 方法 2：临时设置（仅当前会话）
+$env:GOPROXY = "https://goproxy.cn,direct"
+
+# 方法 3：如果使用代理（如 Clash），设置环境变量
+$env:HTTP_PROXY = "http://127.0.0.1:7890"
+$env:HTTPS_PROXY = "http://127.0.0.1:7890"
+$env:GOPROXY = "https://goproxy.cn,direct"
+```
+
+**安装插件：**
+
 ```bash
 # 安装 protoc-gen-go (生成 Go 代码)
 go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
@@ -217,6 +235,17 @@ go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ```
 
+**注意：** 
+- 插件会安装到 `$GOPATH/bin` 或 `$HOME/go/bin` 目录
+- 确保该目录在 PATH 环境变量中
+- 如果命令找不到，检查 Go 的 bin 目录是否在 PATH 中：
+  ```powershell
+  # 查看 Go 的 bin 目录
+  go env GOPATH
+  # 或
+  go env GOBIN
+  ```
+
 ### 3. 安装 gRPC Go 库
 ```bash
 go get google.golang.org/grpc
@@ -224,11 +253,43 @@ go get google.golang.org/protobuf
 ```
 
 ### 4. 验证安装
+
+运行以下命令验证所有工具是否安装成功：
+
 ```bash
+# 验证 protoc 编译器
 protoc --version
+# 应该输出类似：libprotoc 29.6
+
+# 验证 protoc-gen-go 插件
 protoc-gen-go --version
+# 应该输出类似：protoc-gen-go.exe v1.36.11
+
+# 验证 protoc-gen-go-grpc 插件
 protoc-gen-go-grpc --version
+# 应该输出类似：protoc-gen-go-grpc 1.6.1
 ```
+
+**如果某个命令找不到：**
+
+1. **protoc 找不到**：
+   - 检查 `C:\protoc\bin` 是否在系统 PATH 中
+   - 关闭并重新打开 PowerShell
+
+2. **protoc-gen-go 或 protoc-gen-go-grpc 找不到**：
+   - 检查 Go 的 bin 目录是否在 PATH 中：
+     ```powershell
+     # 查看 Go bin 目录
+     $goBin = (go env GOPATH) + "\bin"
+     if ($goBin -notin ($env:Path -split ';')) {
+         Write-Host "Go bin 目录不在 PATH 中: $goBin" -ForegroundColor Yellow
+         Write-Host "请将该目录添加到 PATH 环境变量" -ForegroundColor Yellow
+     }
+     ```
+   - 或者使用完整路径：
+     ```powershell
+     & "$(go env GOPATH)\bin\protoc-gen-go.exe" --version
+     ```
 
 ---
 
