@@ -1,7 +1,7 @@
 # gRPC Hello World 示例
 
 这是第一个 gRPC 学习项目，演示了基本的 gRPC 服务端和客户端实现。
-
+在gRPC里，protobuf文件里的message和service都属于protobuf的定义部分。message是用来定义数据结构的，比如你说的Product和ProductID；service是定义远程调用的接口，指定方法名、输入输出的message类型。所以整个.proto文件里的这些内容，都是protobuf的一部分，用来描述服务和数据格式。
 ## 项目结构
 
 ```
