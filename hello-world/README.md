@@ -63,7 +63,7 @@ go run client/main.go
 ```
 服务器响应: Hello, World!
 ```
-
+哦，原来你说的是gRPC呀。在gRPC里，message确实是用protobuf定义数据结构的，就像定义请求和响应的格式，然后service里声明远程调用的方法，指定输入输出是哪个message。你是刚开始用protobuf写gRPC的服务定义吗？
 ## 代码说明
 
 ### .proto 文件
